@@ -113,12 +113,12 @@
           wrapper.innerHTML = "<p>Participants</p>";
           Object.keys(ps).forEach((p) => {
             let participant = ps[p]; 
-            // console.log(participant.session_id); 
+            console.log(participant); 
             wrapper.innerHTML += `
             <div class="ui-participant-guest">
               
                 <p>${participant.user_name || "Guest"}</p>
-                <img id=${participant.session_id} src="../shared-assets/icon-raised-hand.png" alt="Raised hand"
+                <img id=${p === 'local' ? 'local': participant.session_id} src="../shared-assets/icon-raised-hand.png" alt="Raised hand"
                   style="display:none"/>
               
             </div>`;
@@ -189,10 +189,12 @@
         if(!isCurrentlyRaisingHand) {
           isCurrentlyRaisingHand = true; 
           document.getElementById("handraise-label").innerHTML = "Lower hand"; 
+          // We need to set the hand to the local participant list UI as well (defaul style is none, so this is all we need to toggle)
+          document.getElementById('local').style.display = "block";
 
           callFrame.sendAppMessage({message: isCurrentlyRaisingHand}, "*"); 
 
-          // Placeholder for making raised hand more
+          // Placeholder for making raised hand more visible in the overlay 
           // callFrame.loadCss({cssText: 
           //   `.daily-video-overlay.local {
           //     background-image: url(/static-demos/shared-assets/icon-microphone-off.svg);
@@ -217,12 +219,16 @@
       }
 
       async function updateHandState(e) {
-        handState[e.fromId] = e.data.message; 
+        // Storing the message and id so they don't disappear 
+        let message = e.data.message; 
+        let id = e.fromId; 
+        handState[id] = message; 
         console.log(handState); 
-        if (e.data.message === true) {
-          document.getElementById(`${e.fromId}`).style.display = "block";
+        // Need to solve for local state as well 
+        if (message === true) {
+          document.getElementById(`${id}`).style.display = "block";
         } else {
-          document.getElementById(`${e.fromId}`).style.display = "none";
+          document.getElementById(`${id}`).style.display = "none";
         }
       }
     </script>
