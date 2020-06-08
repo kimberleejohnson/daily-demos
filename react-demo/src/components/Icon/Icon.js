@@ -4,6 +4,8 @@ const TYPE_MUTE_CAMERA = "camera";
 const TYPE_MUTE_MIC = "mute-mic";
 const TYPE_SCREEN = "screen";
 const TYPE_LEAVE = "leave";
+// Adding an icon for raising hand
+const TYPE_RAISE_HAND = "raise-hand";
 
 /**
  * Props:
@@ -85,6 +87,14 @@ export default function Icon(props) {
             fillRule="evenodd"
           />
         );
+      case TYPE_RAISE_HAND:
+        return (
+          <path
+          d="M 10 10 H 90 V 90 H 10 L 10 10"         
+          fill={getFillColor()}
+          fillRule="evenodd"
+          />
+        );
       default:
         throw new Error();
     }
@@ -103,4 +113,10 @@ export default function Icon(props) {
   );
 }
 
-export { TYPE_MUTE_CAMERA, TYPE_MUTE_MIC, TYPE_SCREEN, TYPE_LEAVE };
+export {
+  TYPE_MUTE_CAMERA,
+  TYPE_MUTE_MIC,
+  TYPE_SCREEN,
+  TYPE_LEAVE,
+  TYPE_RAISE_HAND,
+};

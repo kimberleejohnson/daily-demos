@@ -4,6 +4,7 @@ import StartButton from "../StartButton/StartButton";
 import api from "../../api";
 import "./App.css";
 import Tray from "../Tray/Tray";
+import ParticipantList from "../ParticipantList/ParticipantList"; 
 import CallObjectContext from "../../CallObjectContext";
 import { roomUrlFromPageUrl, pageUrlFromRoomUrl } from "../../urlUtils";
 import DailyIframe from "@daily-co/daily-js";
@@ -183,6 +184,7 @@ export default function App() {
         // call object, this can be a helpful pattern.
         <CallObjectContext.Provider value={callObject}>
           <Call roomUrl={roomUrl} />
+          <ParticipantList /> 
           <Tray
             disabled={!enableCallButtons}
             onClickLeaveCall={startLeavingCall}

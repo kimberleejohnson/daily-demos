@@ -137,25 +137,6 @@
   content: "32kb/s upstream video bandwidth cap";
 }
 
-.recording .info-div {
-  background-color: red;
-}
-.recording .info-div::after {
-  content: "recording";
-}
-.recording .info-div {
-  background-color: red;
-}
-.recording .info-div::after {
-  content: "recording ...";
-}
-.recording-uploading:not(.recording) .info-div {
-  background-color: green;
-}
-.recording-uploading:not(.recording) .info-div::after {
-  content: "uploading ...";
-}
-
 @media (max-width: 800px) {
   .daily-videos-wrapper {
     grid-template-columns: 1fr;

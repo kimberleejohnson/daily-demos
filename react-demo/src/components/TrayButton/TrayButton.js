@@ -4,7 +4,8 @@ import Icon, {
   TYPE_MUTE_CAMERA,
   TYPE_MUTE_MIC,
   TYPE_SCREEN,
-  TYPE_LEAVE
+  TYPE_LEAVE,
+  TYPE_RAISE_HAND
 } from "../Icon/Icon";
 
 /**
@@ -27,4 +28,4 @@ export default function TrayButton(props) {
   );
 }
 
-export { TYPE_MUTE_CAMERA, TYPE_MUTE_MIC, TYPE_SCREEN, TYPE_LEAVE };
+export { TYPE_MUTE_CAMERA, TYPE_MUTE_MIC, TYPE_SCREEN, TYPE_LEAVE, TYPE_RAISE_HAND };

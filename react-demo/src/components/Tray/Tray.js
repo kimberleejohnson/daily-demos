@@ -4,7 +4,8 @@ import TrayButton, {
   TYPE_MUTE_CAMERA,
   TYPE_MUTE_MIC,
   TYPE_SCREEN,
-  TYPE_LEAVE
+  TYPE_LEAVE, 
+  TYPE_RAISE_HAND
 } from "../TrayButton/TrayButton";
 import CallObjectContext from "../../CallObjectContext";
 import { logDailyEvent } from "../../logUtils";
@@ -49,6 +50,10 @@ export default function Tray(props) {
 
   function toggleMic() {
     callObject.setLocalAudio(isMicMuted);
+  }
+
+  function toggleHand() {
+    console.log("Raise your hand!")
   }
 
   function toggleSharingScreen() {
@@ -103,6 +108,12 @@ export default function Tray(props) {
         disabled={props.disabled}
         highlighted={isMicMuted}
         onClick={toggleMic}
+      />
+      <TrayButton
+        type={TYPE_RAISE_HAND}
+        disabled={props.disabled}
+        highlighted={false}
+        onClick={toggleHand}
       />
       {DailyIframe.supportedBrowser().supportsScreenShare && (
         <TrayButton
