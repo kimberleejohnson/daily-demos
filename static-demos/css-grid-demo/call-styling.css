@@ -57,12 +57,9 @@ body {
     margin: 0;
   }
 
-  .ui-participant-raise-hand {
-    display: block; 
-  }
-
-  .ui-participant-guest .ui-participant-lower-hand {
-    display: none; 
+  .ui-participant-guest img {
+    width: 24px; 
+    height: 24px;
   }
 
   .ui-controller-control {

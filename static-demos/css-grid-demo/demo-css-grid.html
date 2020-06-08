@@ -52,7 +52,7 @@
             alt="Toggle Microphone On/Off"
           />
         </div>
-        <div onclick="toggleHandRaise()" class="ui-controller-control">
+        <div onclick="toggleHandIcon()" class="ui-controller-control">
           <p id="handraise-label">Raise hand</p>
           <img
             src="../shared-assets/icon-raised-hand.png"
@@ -75,6 +75,9 @@
 
     <script>
       let url, token, isCurrentlyScreenSharing, isCurrentlyRaisingHand = false;
+
+      // Declare empty object to track hand state 
+      let handState = {}; 
 
       function showEvent(e) {
         console.log("video call event -->", e);
@@ -113,9 +116,11 @@
             // console.log(participant.session_id); 
             wrapper.innerHTML += `
             <div class="ui-participant-guest">
-            <p data-session-id=${participant.session_id}>${participant.user_name || "Guest"}</p>
-              <img src="../shared-assets/icon-raised-hand.png" alt="Raised hand"
-                class="ui-participant-lower-hand"/>
+              
+                <p>${participant.user_name || "Guest"}</p>
+                <img id=${participant.session_id} src="../shared-assets/icon-raised-hand.png" alt="Raised hand"
+                  style="display:none"/>
+              
             </div>`;
           });
         }
@@ -151,7 +156,7 @@
           .on("participant-joined", updateEvent)
           .on("participant-updated", updateEvent)
           .on("participant-left", updateEvent)
-          .on("app-message", showEvent)
+          .on("app-message", updateHandState)
           .on("error", showEvent);
         await callFrame.join({
           url: ownerLink,
@@ -173,22 +178,51 @@
       async function toggleScreenShare() {
         if (!isCurrentlyScreenSharing) {
           callFrame.startScreenShare();
+          let message = "sharing"
+          callFrame.sendAppMessage({message: message });
         } else {
           callFrame.stopScreenShare();
         }
       }
 
-      async function toggleHandRaise() {
+      async function toggleHandIcon() {
         if(!isCurrentlyRaisingHand) {
           isCurrentlyRaisingHand = true; 
           document.getElementById("handraise-label").innerHTML = "Lower hand"; 
-          // Placeholder: attach hand icon to local color bar
-          callFrame.updateParticipant('local', {styles: {cam: {div: {display: 'none'}}}}); 
+
+          callFrame.sendAppMessage({message: isCurrentlyRaisingHand}, "*"); 
+
+          // Placeholder for making raised hand more
+          // callFrame.loadCss({cssText: 
+          //   `.daily-video-overlay.local {
+          //     background-image: url(/static-demos/shared-assets/icon-microphone-off.svg);
+          //   }
+          //   `
+          // }); 
+
+          callFrame.updateParticipant("local", { 
+            styles: {
+              cam: { 
+                div: {display: 'none'}
+              }
+            }
+          }); 
         } else {
           isCurrentlyRaisingHand = false;  
           document.getElementById("handraise-label").innerHTML = "Raise hand"; 
           // Placeholder: remove hand icon from local color bar 
           callFrame.updateParticipant('local', {styles: {cam: {div: {display: 'block'}}}}); 
+          callFrame.sendAppMessage({message: isCurrentlyRaisingHand}, "*"); 
+        }
+      }
+
+      async function updateHandState(e) {
+        handState[e.fromId] = e.data.message; 
+        console.log(handState); 
+        if (e.data.message === true) {
+          document.getElementById(`${e.fromId}`).style.display = "block";
+        } else {
+          document.getElementById(`${e.fromId}`).style.display = "none";
         }
       }
     </script>
