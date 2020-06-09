@@ -47,7 +47,21 @@
           <img src="../shared-assets/icon-leave.svg" alt="Leave call" />
         </div>
       </div>
-      <div id="ui-participant"></div>
+      <div id="ui-participant">
+        <p>Participants</p>
+        <div class="ui-participant-local">
+          <em>You</em>
+          <img
+            id="local-hand"
+            src="../shared-assets/icon-raised-hand.png"
+            alt="Raised hand"
+            style="display: none;"
+          />
+          <div class="ui-participant-guests">
+
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -62,7 +76,7 @@
 
       async function joinedCall(e) {
         showEvent(e);
-        
+
         message = {
           handStatus: isCurrentlyRaisingHand,
         };
@@ -91,30 +105,22 @@
       async function updateEvent(e) {
         showEvent(e);
         let ps = callFrame.participants();
-        handState = {...handState}; 
+        handState = { ...handState };
 
         if (Object.keys(ps).length < 2) {
           document.getElementById("ui-local").style.display = "none";
           document.getElementById("ui-alone").style.display = "block";
-          let wrapper = document.getElementById("ui-participant");
+          let wrapper = document.getElementById("ui-participant-guests");
           wrapper.innerHTML = "";
         } else {
           document.getElementById("ui-local").style.display = "none";
           document.getElementById("ui-alone").style.display = "none";
-          let wrapper = document.getElementById("ui-participant");
-          wrapper.innerHTML = "<p>Participants</p>";
+          let wrapper = document.getElementById("ui-participant-guests");
+          wrapper.innerHTML = "";
 
           Object.keys(ps).forEach((p) => {
             if (p === "local") {
-              wrapper.innerHTML += `
-            <div class="ui-participant-guest">
-                <p>Local</p>
-                <img id="local" src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
-            </div>`;
-              if (isCurrentlyRaisingHand) {
-                document.getElementById("local").style.display = "block";
-              }
-              return;
+              return; // We set the local display on load in the html 
             }
 
             let participant = ps[p];
@@ -199,6 +205,7 @@
           isCurrentlyRaisingHand = true;
 
           document.getElementById("handraise-label").innerHTML = "Lower hand";
+          document.getElementById("local-hand").style.display = "block";
           message = {
             handStatus: isCurrentlyRaisingHand,
           };
@@ -223,6 +230,7 @@
           isCurrentlyRaisingHand = false;
 
           document.getElementById("handraise-label").innerHTML = "Raise hand";
+          document.getElementById("local-hand").style.display = "none";
           message = {
             handStatus: isCurrentlyRaisingHand,
           };

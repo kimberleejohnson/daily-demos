@@ -46,6 +46,23 @@ body {
     border: 0.5px solid #4f4f4f;
     margin-bottom: 1.25em; /** 20/16px **/
   }
+  
+  .ui-participant img {
+    width: 24px; 
+    height: 24px;
+  }
+
+  .ui-participant-local {
+    display: flex; 
+    justify-content: space-between;
+    margin-bottom: 1.25em; 
+  }
+  
+  .ui-participant-local img {
+    width: 24px; 
+    height: 24px;
+  }
+  
   .ui-controller-control,
   .ui-participant-guest {
     display: flex;
