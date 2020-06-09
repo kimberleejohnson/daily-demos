@@ -2,7 +2,7 @@
   <head>
     <title>Video chat</title>
     <script src="https://unpkg.com/@daily-co/daily-js"></script>
-    <link rel="stylesheet" href="./call-styling.css">
+    <link rel="stylesheet" href="./call-styling.css" />
   </head>
   <body onload="run()">
     <div
@@ -54,10 +54,7 @@
         </div>
         <div onclick="toggleHandIcon()" class="ui-controller-control">
           <p id="handraise-label">Raise hand</p>
-          <img
-            src="../shared-assets/icon-raised-hand.png"
-            alt="Hand icon"
-          />
+          <img src="../shared-assets/icon-raised-hand.png" alt="Hand icon" />
         </div>
         <div onclick="toggleScreenShare()" class="ui-controller-control">
           <p id="screenshare-label">Start a screen share</p>
@@ -69,15 +66,18 @@
           <img src="../shared-assets/icon-leave.svg" alt="Leave call" />
         </div>
       </div>
-      <div id="ui-participant">
-      </div>
+      <div id="ui-participant"></div>
     </div>
 
     <script>
-      let url, token, isCurrentlyScreenSharing, isCurrentlyRaisingHand = false;
+      let url,
+        token,
+        message,
+        isCurrentlyScreenSharing,
+        isCurrentlyRaisingHand;
 
-      // Declare empty object to track hand state 
-      let handState = {}; 
+      // Declare empty object to track hand state
+      let handState = {};
 
       function showEvent(e) {
         console.log("video call event -->", e);
@@ -85,9 +85,18 @@
 
       async function joinedCall(e) {
         showEvent(e);
+        // Set participant's hand state to false when they join
+        let ps = callFrame.participants();
+        let newestP = ps[Object.keys(ps)[0]].session_id;
+        handState[newestP] = false;
+        console.log(handState);
+        // Change the displays and remove the name from the list when they leave
         document.getElementById("leave-call-label").innerHTML = "Leave call";
-        document.getElementById("leave-call-div").onclick = () =>
-          callFrame.leave();
+
+        // Setting up what happens when leave clicked
+        document.getElementById("leave-call-div").onclick = () => {
+          callFrame.leave().updateEvent(e);
+        }
       }
 
       async function leftCall(e) {
@@ -111,19 +120,37 @@
           document.getElementById("ui-alone").style.display = "none";
           let wrapper = document.getElementById("ui-participant");
           wrapper.innerHTML = "<p>Participants</p>";
+
           Object.keys(ps).forEach((p) => {
-            let participant = ps[p]; 
-            console.log(participant); 
+            if (p === "local") {
+              wrapper.innerHTML += `
+            <div class="ui-participant-guest">
+                <p>Local</p>
+                <img id="local" src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
+            </div>`;
+            if (isCurrentlyRaisingHand) {
+                document.getElementById("local").style.display = "block";
+            }
+              return; 
+            }
+
+            let participant = ps[p];
             wrapper.innerHTML += `
             <div class="ui-participant-guest">
-              
                 <p>${participant.user_name || "Guest"}</p>
-                <img id=${p === 'local' ? 'local': participant.session_id} src="../shared-assets/icon-raised-hand.png" alt="Raised hand"
-                  style="display:none"/>
-              
+                <img id=${
+                  participant.session_id
+                } src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
             </div>`;
+            if (handState[participant.session_id] === true) {
+              document.getElementById(
+                `${participant.session_id}`
+              ).style.display = "block";
+            }
           });
         }
+      
+
         // update controller ui for joining/leaving the meeting and
         // for local screenshare start/stop
         if (ps.local) {
@@ -140,7 +167,7 @@
       }
 
       async function run() {
-        // To test this feature quickly, I'm hard-coding my meeting room. 
+        // To test this feature quickly, I'm hard-coding my meeting room.
         // This is NOT a best practice. For more on creating rooms securely, head to [LINK]
         room = { url: "https://kimberlee.daily.co/hello" };
         ownerLink = room.url;
@@ -178,59 +205,68 @@
       async function toggleScreenShare() {
         if (!isCurrentlyScreenSharing) {
           callFrame.startScreenShare();
-          let message = "sharing"
-          callFrame.sendAppMessage({message: message });
+          let message = "sharing";
+          callFrame.sendAppMessage({ message: message });
         } else {
           callFrame.stopScreenShare();
         }
       }
 
       async function toggleHandIcon() {
-        if(!isCurrentlyRaisingHand) {
-          isCurrentlyRaisingHand = true; 
-          document.getElementById("handraise-label").innerHTML = "Lower hand"; 
-          // We need to set the hand to the local participant list UI as well (defaul style is none, so this is all we need to toggle)
-          document.getElementById('local').style.display = "block";
+        if (!isCurrentlyRaisingHand) {
+          isCurrentlyRaisingHand = true;
 
-          callFrame.sendAppMessage({message: isCurrentlyRaisingHand}, "*"); 
+          document.getElementById("handraise-label").innerHTML = "Lower hand";
+          message = {
+            handStatus: isCurrentlyRaisingHand,
+          };
+          callFrame.sendAppMessage(message, "*");
 
-          // Placeholder for making raised hand more visible in the overlay 
-          // callFrame.loadCss({cssText: 
+          // Placeholder for making raised hand more visible in the overlay
+          // callFrame.loadCss({cssText:
           //   `.daily-video-overlay.local {
           //     background-image: url(/static-demos/shared-assets/icon-microphone-off.svg);
           //   }
           //   `
-          // }); 
+          // });
 
-          callFrame.updateParticipant("local", { 
-            styles: {
-              cam: { 
-                div: {display: 'none'}
-              }
-            }
-          }); 
+          // callFrame.updateParticipant("local", {
+          //   styles: {
+          //     cam: {
+          //       div: { display: "none" },
+          //     },
+          //   },
+          // });
         } else {
-          isCurrentlyRaisingHand = false;  
-          document.getElementById("handraise-label").innerHTML = "Raise hand"; 
-          // Placeholder: remove hand icon from local color bar 
-          callFrame.updateParticipant('local', {styles: {cam: {div: {display: 'block'}}}}); 
-          callFrame.sendAppMessage({message: isCurrentlyRaisingHand}, "*"); 
+          isCurrentlyRaisingHand = false;
+
+          document.getElementById("handraise-label").innerHTML = "Raise hand";
+          message = {
+            handStatus: isCurrentlyRaisingHand,
+          };
+          callFrame.sendAppMessage({ message }, "*");
+
+          // Placeholder: remove hand icon from local color bar
+          // callFrame.updateParticipant("local", {
+          //   styles: { cam: { div: { display: "block" } } },
+          // });
         }
       }
 
       async function updateHandState(e) {
-        // Storing the message and id so they don't disappear 
-        let message = e.data.message; 
-        let id = e.fromId; 
-        handState[id] = message; 
-        console.log(handState); 
-        // Need to solve for local state as well 
-        if (message === true) {
-          document.getElementById(`${id}`).style.display = "block";
-        } else {
-          document.getElementById(`${id}`).style.display = "none";
-        }
+        // Storing the message and id so they don't disappear
+        let id = e.fromId;
+        let handStatus = e.data.handStatus;
+
+        // Update overall object status
+        handState[id] = handStatus;
+        console.log(handState);
+
+        updateEvent(e);
+        return handState;
       }
+    
+    
     </script>
   </body>
 </html>
