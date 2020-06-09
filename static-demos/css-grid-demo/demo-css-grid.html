@@ -5,25 +5,6 @@
     <link rel="stylesheet" href="./call-styling.css" />
   </head>
   <body onload="run()">
-    <div
-      onclick="callFrame.join({ url }).then((ps)=>console.log('joined and have participants', ps));"
-    >
-      [ join mtg ]
-    </div>
-    <div onclick="console.log('PARTICIPANTS', callFrame.participants())">
-      [ get participants ]
-    </div>
-
-    <div onclick="callFrame.stopScreenShare()">
-      [ stop screen share ]
-    </div>
-    <div
-      onclick="showNames = !showNames;
-                  callFrame.loadCss({ bodyClass: bodyClasses() });"
-    >
-      [ toggle names ]
-    </div>
-
     <iframe id="call-frame" allow="camera; microphone; autoplay"></iframe>
 
     <div id="ui-container">
@@ -70,11 +51,7 @@
     </div>
 
     <script>
-      let url,
-        token,
-        message,
-        isCurrentlyScreenSharing,
-        isCurrentlyRaisingHand;
+      let url, token, message, isCurrentlyScreenSharing, isCurrentlyRaisingHand;
 
       // Declare empty object to track hand state
       let handState = {};
@@ -85,18 +62,23 @@
 
       async function joinedCall(e) {
         showEvent(e);
+        
+        message = {
+          handStatus: isCurrentlyRaisingHand,
+        };
+        callFrame.sendAppMessage(message, "*");
+
         // Set participant's hand state to false when they join
-        let ps = callFrame.participants();
-        let newestP = ps[Object.keys(ps)[0]].session_id;
-        handState[newestP] = false;
-        console.log(handState);
+        // isCurrentlyRaisingHand = false;
+        // updateEvent(e);
+
         // Change the displays and remove the name from the list when they leave
         document.getElementById("leave-call-label").innerHTML = "Leave call";
 
         // Setting up what happens when leave clicked
         document.getElementById("leave-call-div").onclick = () => {
-          callFrame.leave().updateEvent(e);
-        }
+          callFrame.leave();
+        };
       }
 
       async function leftCall(e) {
@@ -109,6 +91,7 @@
       async function updateEvent(e) {
         showEvent(e);
         let ps = callFrame.participants();
+        handState = {...handState}; 
 
         if (Object.keys(ps).length < 2) {
           document.getElementById("ui-local").style.display = "none";
@@ -128,10 +111,10 @@
                 <p>Local</p>
                 <img id="local" src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
             </div>`;
-            if (isCurrentlyRaisingHand) {
+              if (isCurrentlyRaisingHand) {
                 document.getElementById("local").style.display = "block";
-            }
-              return; 
+              }
+              return;
             }
 
             let participant = ps[p];
@@ -149,7 +132,6 @@
             }
           });
         }
-      
 
         // update controller ui for joining/leaving the meeting and
         // for local screenshare start/stop
@@ -166,7 +148,7 @@
         }
       }
 
-      async function run() {
+      async function run(handState) {
         // To test this feature quickly, I'm hard-coding my meeting room.
         // This is NOT a best practice. For more on creating rooms securely, head to [LINK]
         room = { url: "https://kimberlee.daily.co/hello" };
@@ -244,7 +226,7 @@
           message = {
             handStatus: isCurrentlyRaisingHand,
           };
-          callFrame.sendAppMessage({ message }, "*");
+          callFrame.sendAppMessage(message, "*");
 
           // Placeholder: remove hand icon from local color bar
           // callFrame.updateParticipant("local", {
@@ -258,15 +240,14 @@
         let id = e.fromId;
         let handStatus = e.data.handStatus;
 
-        // Update overall object status
+        // Update the object's status for that event
         handState[id] = handStatus;
         console.log(handState);
 
         updateEvent(e);
+
         return handState;
       }
-    
-    
     </script>
   </body>
 </html>
