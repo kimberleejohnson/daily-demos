@@ -57,15 +57,18 @@
             alt="Raised hand"
             style="display: none;"
           />
-          <div class="ui-participant-guests">
-
-          </div>
+          <div id="ui-participant-guests"></div>
         </div>
       </div>
     </div>
 
     <script>
-      let url, token, message, isCurrentlyScreenSharing, isCurrentlyRaisingHand;
+      let url,
+        token,
+        message,
+        guestList,
+        isCurrentlyScreenSharing,
+        isCurrentlyRaisingHand;
 
       // Declare empty object to track hand state
       let handState = {};
@@ -74,27 +77,27 @@
         console.log("video call event -->", e);
       }
 
-      async function joinedCall(e) {
+      // When caller joins
+      async function joinedCall() {
         showEvent(e);
-
+        // Set the handraising status to false
+        isCurrentlyRaisingHand = false;
+        // And send that message to everyone, so the function called on 'app-message' is invoked to update list
         message = {
           handStatus: isCurrentlyRaisingHand,
         };
-        callFrame.sendAppMessage(message, "*");
+        setTimeout(() => {
+          callFrame.sendAppMessage(message, "*");
+        }, 2500);
 
-        // Set participant's hand state to false when they join
-        // isCurrentlyRaisingHand = false;
-        // updateEvent(e);
-
-        // Change the displays and remove the name from the list when they leave
+        // Dynamically  update whether leave call button is displayed
         document.getElementById("leave-call-label").innerHTML = "Leave call";
-
-        // Setting up what happens when leave clicked
         document.getElementById("leave-call-div").onclick = () => {
           callFrame.leave();
         };
       }
 
+      // Something when caller leaves
       async function leftCall(e) {
         showEvent(e);
         document.getElementById("leave-call-label").innerHTML = "Join call";
@@ -105,39 +108,7 @@
       async function updateEvent(e) {
         showEvent(e);
         let ps = callFrame.participants();
-        handState = { ...handState };
-
-        if (Object.keys(ps).length < 2) {
-          document.getElementById("ui-local").style.display = "none";
-          document.getElementById("ui-alone").style.display = "block";
-          let wrapper = document.getElementById("ui-participant-guests");
-          wrapper.innerHTML = "";
-        } else {
-          document.getElementById("ui-local").style.display = "none";
-          document.getElementById("ui-alone").style.display = "none";
-          let wrapper = document.getElementById("ui-participant-guests");
-          wrapper.innerHTML = "";
-
-          Object.keys(ps).forEach((p) => {
-            if (p === "local") {
-              return; // We set the local display on load in the html 
-            }
-
-            let participant = ps[p];
-            wrapper.innerHTML += `
-            <div class="ui-participant-guest">
-                <p>${participant.user_name || "Guest"}</p>
-                <img id=${
-                  participant.session_id
-                } src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
-            </div>`;
-            if (handState[participant.session_id] === true) {
-              document.getElementById(
-                `${participant.session_id}`
-              ).style.display = "block";
-            }
-          });
-        }
+        let wrapper = document.getElementById("ui-participant-guests");
 
         // update controller ui for joining/leaving the meeting and
         // for local screenshare start/stop
@@ -154,7 +125,7 @@
         }
       }
 
-      async function run(handState) {
+      async function run() {
         // To test this feature quickly, I'm hard-coding my meeting room.
         // This is NOT a best practice. For more on creating rooms securely, head to [LINK]
         room = { url: "https://kimberlee.daily.co/hello" };
@@ -165,11 +136,9 @@
           { customLayout: true }
         );
         callFrame
-          .on("joining-meeting", showEvent)
           .on("joined-meeting", joinedCall)
           .on("left-meeting", leftCall)
-          .on("participant-joined", updateEvent)
-          .on("participant-updated", updateEvent)
+          .on("participant-joined", newParticipant)
           .on("participant-left", updateEvent)
           .on("app-message", updateHandState)
           .on("error", showEvent);
@@ -200,61 +169,95 @@
         }
       }
 
+      // When the local user clicks to raise their hand
       async function toggleHandIcon() {
         if (!isCurrentlyRaisingHand) {
           isCurrentlyRaisingHand = true;
-
+          // Change the display locally
           document.getElementById("handraise-label").innerHTML = "Lower hand";
           document.getElementById("local-hand").style.display = "block";
+          // And, broadcast that new state as a new message, so the function to updateParticipantList is invoked again
           message = {
             handStatus: isCurrentlyRaisingHand,
           };
           callFrame.sendAppMessage(message, "*");
-
-          // Placeholder for making raised hand more visible in the overlay
-          // callFrame.loadCss({cssText:
-          //   `.daily-video-overlay.local {
-          //     background-image: url(/static-demos/shared-assets/icon-microphone-off.svg);
-          //   }
-          //   `
-          // });
-
-          // callFrame.updateParticipant("local", {
-          //   styles: {
-          //     cam: {
-          //       div: { display: "none" },
-          //     },
-          //   },
-          // });
+          //  PLACEHOLDER: for making raised hand more visible in the overlay
+          //  callFrame.loadCss({cssText:
+          //    `.daily-video-overlay.local {
+          //      background-image: url(insert-link-to-raised-hand-here);
+          //    }
+          //    `
+          //  });
         } else {
           isCurrentlyRaisingHand = false;
-
           document.getElementById("handraise-label").innerHTML = "Raise hand";
           document.getElementById("local-hand").style.display = "none";
           message = {
             handStatus: isCurrentlyRaisingHand,
           };
           callFrame.sendAppMessage(message, "*");
-
-          // Placeholder: remove hand icon from local color bar
+          // PLACEHOLDER: remove hand icon from local color bar
           // callFrame.updateParticipant("local", {
           //   styles: { cam: { div: { display: "block" } } },
           // });
         }
       }
 
+      // What happens when everyone else on the call sees that caller join
+      async function newParticipant() {
+        isCurrentlyRaisingHand = false;
+        message = {
+          handStatus: isCurrentlyRaisingHand,
+        };
+        setTimeout(() => {
+          callFrame.sendAppMessage(message, "*");
+        }, 2500);
+      }
+
+      // When a user sends a message
       async function updateHandState(e) {
-        // Storing the message and id so they don't disappear
+        showEvent(e);
+        // Store the message before it disappears
         let id = e.fromId;
         let handStatus = e.data.handStatus;
-
-        // Update the object's status for that event
+        // Update the handState object to make sure it has the latest status for that hand
         handState[id] = handStatus;
-        console.log(handState);
+        // Update the participant list to show proper state
+        updateParticipantList();
+      }
 
-        updateEvent(e);
+      // Update the participants on view (triggered after a message received and processed)
+      async function updateParticipantList() {
+        let ps = callFrame.participants();
+        let wrapper = document.getElementById("ui-participant-guests");
+        if (Object.keys(ps).length < 2) {
+          document.getElementById("ui-local").style.display = "none";
+          document.getElementById("ui-alone").style.display = "block";
+          wrapper.innerHTML = "";
+        } else {
+          document.getElementById("ui-local").style.display = "none";
+          document.getElementById("ui-alone").style.display = "none";
+          wrapper.innerHTML = "";
 
-        return handState;
+          Object.keys(ps).forEach((p) => {
+            if (p !== "local") {
+              // We set the local display on load in the html, so we just do everyone else here
+              let participant = ps[p];
+              wrapper.innerHTML += `
+        <div class="ui-participant-guest">
+            <p>${participant.user_name || "Guest"}</p>
+            <img id=${
+              participant.session_id
+            } src="../shared-assets/icon-raised-hand.png" alt="Raised hand" style="display:none"/>
+        </div>`;
+              if (handState[participant.session_id] === true) {
+                document.getElementById(
+                  `${participant.session_id}`
+                ).style.display = "block";
+              }
+            }
+          });
+        }
       }
     </script>
   </body>
